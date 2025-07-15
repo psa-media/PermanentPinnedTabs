@@ -29,6 +29,7 @@ const ICON_DEFAULT = {
 // State tracking
 let isInitializing = false;
 let lastCheckTime = 0;
+let processingAutomaticPinChange = false;
 
 // Event Listeners
 chrome.runtime.onStartup.addListener(handleStartup);
@@ -108,21 +109,24 @@ async function checkAndPinTabs(source = 'manual', targetWindowId = null) {
         console.log(`Fehlende URLs in Fenster ${window.id}:`, missingUrls);
         allTabsOk = false;
         
-        // Öffne fehlende Tabs nur einmal pro Fenster
-        for (const url of missingUrls) {
-          try {
-            console.log(`Erstelle angepinnten Tab für: ${url}`);
-            const tab = await chrome.tabs.create({
-              url: url,
-              windowId: window.id,
-              pinned: true,
-              active: false
-            });
-            console.log(`Tab erstellt: ${tab.id} für ${url}`);
-          } catch (error) {
-            console.error(`Fehler beim Öffnen von ${url}:`, error);
+                  // Öffne fehlende Tabs nur einmal pro Fenster
+          for (const url of missingUrls) {
+            try {
+              console.log(`Erstelle angepinnten Tab für: ${url}`);
+              processingAutomaticPinChange = true;
+              const tab = await chrome.tabs.create({
+                url: url,
+                windowId: window.id,
+                pinned: true,
+                active: false
+              });
+              console.log(`Tab erstellt: ${tab.id} für ${url}`);
+              processingAutomaticPinChange = false;
+            } catch (error) {
+              console.error(`Fehler beim Öffnen von ${url}:`, error);
+              processingAutomaticPinChange = false;
+            }
           }
-        }
       }
 
       // Prüfe, ob es angepinnte Tabs gibt, die nicht in der Liste stehen
@@ -132,9 +136,12 @@ async function checkAndPinTabs(source = 'manual', targetWindowId = null) {
           // Entpinne den Tab, falls er nicht in der Liste steht
           console.log(`Entpinne Tab: ${tab.url} (nicht in Liste)`);
           try {
+            processingAutomaticPinChange = true;
             await chrome.tabs.update(tab.id, { pinned: false });
+            processingAutomaticPinChange = false;
           } catch (error) {
             console.error(`Fehler beim Entpinnen von Tab ${tab.id}:`, error);
+            processingAutomaticPinChange = false;
           }
         }
       }
@@ -184,6 +191,12 @@ async function handleTabUpdated(tabId, changeInfo, tab) {
   
   if (changeInfo.pinned !== undefined) {
     console.log('Tab pinning geändert:', tabId, 'pinned:', changeInfo.pinned);
+    
+    // Prüfe ob dies eine manuelle Pinning-Änderung war
+    if (!processingAutomaticPinChange) {
+      await handleManualPinChange(tabId, changeInfo.pinned, tab);
+    }
+    
     // Verzögerte Überprüfung bei Pinning-Änderungen
     setTimeout(() => checkAndPinTabs('tab-updated'), 500);
   }
@@ -306,9 +319,12 @@ async function removePermanentUrl(url) {
       
       for (const tab of tabsToUnpin) {
         try {
+          processingAutomaticPinChange = true;
           await chrome.tabs.update(tab.id, { pinned: false });
+          processingAutomaticPinChange = false;
         } catch (error) {
           console.error(`Fehler beim Entpinnen von Tab ${tab.id}:`, error);
+          processingAutomaticPinChange = false;
         }
       }
     }
@@ -341,6 +357,58 @@ function isValidUrl(string) {
     return url.protocol === 'http:' || url.protocol === 'https:';
   } catch (error) {
     return false;
+  }
+}
+
+// Bidirektionale Synchronisation: Manuelle Pin-Änderungen handhaben
+async function handleManualPinChange(tabId, isPinned, tab) {
+  try {
+    const result = await chrome.storage.local.get([STORAGE_KEY]);
+    const urls = result[STORAGE_KEY] || [];
+    
+    if (!tab || !tab.url) {
+      console.log('Tab oder URL nicht verfügbar für manuelle Pin-Änderung');
+      return;
+    }
+    
+    const normalizedTabUrl = normalizeUrl(tab.url);
+    const existsInList = urls.some(url => normalizeUrl(url) === normalizedTabUrl);
+    
+    if (isPinned && !existsInList) {
+      // Tab wurde manuell angepinnt und ist nicht in der Liste
+      console.log(`Tab manuell angepinnt: ${tab.url} - füge zur Liste hinzu`);
+      
+      // Validiere URL
+      if (!isValidUrl(tab.url)) {
+        console.log('Ungültige URL, nicht zur Liste hinzugefügt:', tab.url);
+        return;
+      }
+      
+      // Füge zur Liste hinzu
+      urls.push(tab.url);
+      await chrome.storage.local.set({ [STORAGE_KEY]: urls });
+      
+      console.log('URL automatisch zur permanenten Liste hinzugefügt:', tab.url);
+      
+      // Status aktualisieren
+      setTimeout(() => checkAndPinTabs('manual-pin-added'), 100);
+      
+    } else if (!isPinned && existsInList) {
+      // Tab wurde manuell entpinnt und ist in der Liste
+      console.log(`Tab manuell entpinnt: ${tab.url} - entferne aus Liste`);
+      
+      // Entferne aus Liste
+      const filteredUrls = urls.filter(url => normalizeUrl(url) !== normalizedTabUrl);
+      await chrome.storage.local.set({ [STORAGE_KEY]: filteredUrls });
+      
+      console.log('URL automatisch aus permanenter Liste entfernt:', tab.url);
+      
+      // Status aktualisieren
+      setTimeout(() => checkAndPinTabs('manual-pin-removed'), 100);
+    }
+    
+  } catch (error) {
+    console.error('Fehler bei handleManualPinChange:', error);
   }
 }
 
@@ -446,7 +514,9 @@ async function handlePinnedTabNavigation(tabId, changeInfo, tab) {
           });
           
           // Stelle die ursprüngliche URL im angepinnten Tab wieder her
+          processingAutomaticPinChange = true;
           await chrome.tabs.update(tabId, { url: storedUrl });
+          processingAutomaticPinChange = false;
           
           return;
         }
