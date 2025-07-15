@@ -32,21 +32,21 @@ PermanentPinnedTabs automatisiert das Verwalten von angepinnten Tabs in Chrome. 
 - **Aktueller Tab**: Ein-Klick-Option zum Hinzufügen des aktiven Tabs
 - **Status-Anzeige**: Visueller Indikator für den aktuellen Status
 
-### Automatische Installation-Synchronisation (NEU!)
+### Automatische Installation-Synchronisation
 - **Nahtlose Übernahme**: Bei der ersten Installation werden alle bereits angepinnten Tabs automatisch in die permanente Liste übernommen
 - **Intelligente Erkennung**: Durchsucht alle Browser-Fenster nach bestehenden angepinnten Tabs
 - **Validierung**: Nur gültige HTTP/HTTPS URLs werden übernommen
 - **Duplikat-Schutz**: Bereits vorhandene URLs werden nicht doppelt hinzugefügt
 - **Transparenter Prozess**: Alle Aktionen werden protokolliert für bessere Nachvollziehbarkeit
 
-### Domain-Schutz (NEU!)
+### Domain-Schutz
 - **Externe Links**: Klicks auf Links zu anderen Domains öffnen automatisch neue Tabs
 - **URL-Eingabe**: Direkte Eingabe externer URLs in die Adressleiste wird in neuen Tabs geöffnet
 - **Form-Submissions**: Formulare zu externen Domains werden in neuen Tabs verarbeitet
 - **History-API**: Verhindert programmatische Navigation zu externen Domains
 - **Automatische Wiederherstellung**: Angepinnte Tabs kehren automatisch zur ursprünglichen Domain zurück
 
-### Bidirektionale Synchronisation (NEU!)
+### Bidirektionale Synchronisation
 - **Manuelles Anpinnen**: Wenn Sie einen Tab manuell anpinnen, wird er automatisch zur permanenten Liste hinzugefügt
 - **Manuelles Entpinnen**: Wenn Sie einen Tab manuell entpinnen, wird er automatisch aus der permanenten Liste entfernt
 - **Intelligente Erkennung**: Die Extension unterscheidet zwischen automatischen und manuellen Aktionen
@@ -63,23 +63,19 @@ PermanentPinnedTabs automatisiert das Verwalten von angepinnten Tabs in Chrome. 
 
 1. **Erweiterung herunterladen**
    ```bash
-   git clone https://github.com/[your-username]/PermanentPinnedTabs.git
+   git clone https://github.com/psa-media/PermanentPinnedTabs.git
    cd PermanentPinnedTabs
    ```
 
-2. **Icons erstellen** (siehe `icons/README_ICONS.txt`)
-   - Erstellen Sie die erforderlichen Icon-Dateien im `icons/` Verzeichnis
-   - Oder verwenden Sie temporäre Platzhalter für Tests
-
-3. **Chrome öffnen**
+2. **Chrome öffnen**
    - Navigieren Sie zu `chrome://extensions/`
    - Aktivieren Sie den "Entwicklermodus" (oben rechts)
 
-4. **Erweiterung laden**
+3. **Erweiterung laden**
    - Klicken Sie auf "Entpackte Erweiterung laden"
    - Wählen Sie den `PermanentPinnedTabs` Ordner aus
 
-5. **Berechtigung erteilen**
+4. **Berechtigung erteilen**
    - Chrome fragt nach Berechtigung für Tab-Zugriff
    - Klicken Sie auf "Erweiterung hinzufügen"
 
@@ -350,7 +346,6 @@ MIT License - Siehe [LICENSE](LICENSE) Datei für Details.
 ## 🙏 Danksagungen
 
 - Chrome Extension API Dokumentation
-- Icons erstellt mit [Canva](https://canva.com)
 - Inspiriert von "Session Buddy" und ähnlichen Erweiterungen
 
 ---
