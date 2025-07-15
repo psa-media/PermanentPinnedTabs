@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PermanentPinnedTabs</title>
+    <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>PermanentPinnedTabs</h1>
+            <div class="status-indicator" id="statusIndicator">
+                <span class="status-dot" id="statusDot"></span>
+                <span class="status-text" id="statusText">Wird geladen...</span>
+            </div>
+        </header>
+
+        <div class="add-section">
+            <h2>Neue URL hinzufügen</h2>
+            <div class="input-group">
+                <input type="url" id="urlInput" placeholder="https://example.com" />
+                <button id="addButton" class="btn btn-primary">Hinzufügen</button>
+            </div>
+            <button id="addCurrentTabButton" class="btn btn-secondary">Aktuellen Tab hinzufügen</button>
+        </div>
+
+        <div class="urls-section">
+            <div class="section-header">
+                <h2>Permanente URLs</h2>
+                <button id="refreshButton" class="btn btn-small">↻ Aktualisieren</button>
+            </div>
+            
+            <div id="urlsList" class="urls-list">
+                <!-- URLs werden dynamisch hier eingefügt -->
+            </div>
+            
+            <div id="emptyState" class="empty-state" style="display: none;">
+                <p>Keine URLs in der Liste.</p>
+                <p>Fügen Sie URLs hinzu, um sie dauerhaft als angepinnte Tabs zu behalten.</p>
+            </div>
+        </div>
+
+        <div class="actions">
+            <button id="forceCheckButton" class="btn btn-secondary">Alle Tabs prüfen</button>
+        </div>
+
+        <footer>
+            <p class="info-text">Diese Erweiterung hält Ihre wichtigsten Webseiten automatisch als angepinnte Tabs geöffnet.</p>
+        </footer>
+    </div>
+
+    <!-- Bestätigungsdialog -->
+    <div id="confirmDialog" class="modal" style="display: none;">
+        <div class="modal-content">
+            <h3>URL entfernen?</h3>
+            <p>Möchten Sie diese URL wirklich aus der Liste der permanenten Tabs entfernen?</p>
+            <div class="modal-url" id="confirmUrl"></div>
+            <div class="modal-actions">
+                <button id="confirmCancel" class="btn btn-secondary">Abbrechen</button>
+                <button id="confirmDelete" class="btn btn-danger">Entfernen</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Nachrichten-Toast -->
+    <div id="toast" class="toast" style="display: none;">
+        <span id="toastMessage"></span>
+    </div>
+
+    <script src="popup.js"></script>
+</body>
+</html> 
