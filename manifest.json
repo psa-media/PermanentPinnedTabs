@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "PermanentPinnedTabs",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Hält eine benutzerdefinierte Liste von Webseiten dauerhaft als angepinnte Tabs geöffnet",
   "permissions": [
     "tabs",

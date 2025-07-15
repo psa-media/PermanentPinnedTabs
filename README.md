@@ -1,6 +1,6 @@
 # PermanentPinnedTabs - Chrome Extension
 
-**Version:** 1.0.0  
+**Version:** 1.0.1  
 **Manifest:** v3  
 **Sprache:** Deutsch
 
