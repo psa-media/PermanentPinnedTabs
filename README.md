@@ -15,6 +15,7 @@ PermanentPinnedTabs automatisiert das Verwalten von angepinnten Tabs in Chrome. 
 - ✅ Entfernt Tabs automatisch, wenn sie aus der Liste gelöscht werden
 - ✅ Zeigt den aktuellen Status über das Browser-Icon an
 - ✅ Bietet eine benutzerfreundliche Oberfläche zur Verwaltung
+- ✅ **Domain-Schutz**: Verhindert Navigation zu externen Domains in angepinnten Tabs
 
 ## 🚀 Hauptfunktionen
 
@@ -28,6 +29,13 @@ PermanentPinnedTabs automatisiert das Verwalten von angepinnten Tabs in Chrome. 
 - **URL-Verwaltung**: Einfaches Hinzufügen und Entfernen von URLs
 - **Aktueller Tab**: Ein-Klick-Option zum Hinzufügen des aktiven Tabs
 - **Status-Anzeige**: Visueller Indikator für den aktuellen Status
+
+### Domain-Schutz (NEU!)
+- **Externe Links**: Klicks auf Links zu anderen Domains öffnen automatisch neue Tabs
+- **URL-Eingabe**: Direkte Eingabe externer URLs in die Adressleiste wird in neuen Tabs geöffnet
+- **Form-Submissions**: Formulare zu externen Domains werden in neuen Tabs verarbeitet
+- **History-API**: Verhindert programmatische Navigation zu externen Domains
+- **Automatische Wiederherstellung**: Angepinnte Tabs kehren automatisch zur ursprünglichen Domain zurück
 
 ### Sicherheit & Speicherung
 - **Lokale Speicherung**: Alle Daten bleiben auf Ihrem Gerät
@@ -121,6 +129,21 @@ Die Erweiterung arbeitet automatisch im Hintergrund:
 2. **Bei neuen Fenstern**: Pinnt konfigurierte URLs an
 3. **Bei Tab-Änderungen**: Reagiert auf manuelles Entpinnen
 4. **Kontinuierlich**: Überwacht und korrigiert den Status
+5. **Domain-Schutz**: Öffnet externe Links automatisch in neuen Tabs
+
+### Domain-Schutz in Aktion
+
+**Was passiert automatisch:**
+- ✅ Klick auf externen Link → Öffnet in neuem Tab
+- ✅ Eingabe neuer URL in Adressleiste → Öffnet in neuem Tab
+- ✅ Formular zu externer Domain → Öffnet Ergebnis in neuem Tab
+- ✅ Angepinnter Tab bleibt auf ursprünglicher Domain
+
+**Beispiel:**
+1. Sie haben `https://github.com` als angepinnten Tab
+2. Sie klicken auf einen Link zu `https://stackoverflow.com`
+3. StackOverflow öffnet sich in einem **neuen Tab**
+4. Der angepinnte Tab bleibt auf GitHub
 
 ## ⚙️ Konfiguration
 
@@ -170,6 +193,8 @@ Das Erweiterungsicon zeigt kontinuierlich den aktuellen Status:
 - **chrome.storage.local**: Persistente Datenspeicherung
 - **chrome.runtime**: Kommunikation zwischen Komponenten
 - **chrome.action**: Icon- und Popup-Management
+- **Content Scripts**: Domain-Schutz und Link-Interception
+- **host_permissions**: Zugriff auf alle URLs für Domain-Schutz
 
 ### Datenspeicherung
 
