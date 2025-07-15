@@ -1,217 +1,33 @@
 # Chrome Extension .gitignore
 
 # ================================
-# Compiled Extension Files
+# Compiled/Packaged Extension Files
 # ================================
 *.crx
 *.pem
 *.zip
-*.7z
-*.rar
-dist/
-build/
-release/
-
-# ================================
-# Development Files
-# ================================
-# Node.js (falls später hinzugefügt)
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-package-lock.json
-yarn.lock
-
-# Logs
-logs/
-*.log
 
 # ================================
 # Operating System Files
 # ================================
 # Windows
 Thumbs.db
-ehthumbs.db
 Desktop.ini
 $RECYCLE.BIN/
-*.cab
-*.msi
-*.msm
-*.msp
-*.lnk
 
 # macOS
 .DS_Store
-.DS_Store?
 ._*
-.Spotlight-V100
-.Trashes
-.AppleDouble
-.LSOverride
-Icon?
-
-# Linux
-*~
-.nfs*
 
 # ================================
-# Editor & IDE Files
+# Editor/IDE Files
 # ================================
-# Visual Studio Code
+# Visual Studio Code (optional)
 .vscode/
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-!.vscode/extensions.json
-
-# JetBrains IDEs
-.idea/
-*.iml
-*.ipr
-*.iws
-
-# Sublime Text
-*.sublime-project
-*.sublime-workspace
-*.sublime-session
-
-# Vim
-*.swp
-*.swo
-*~
-Session.vim
-
-# Emacs
-*~
-\#*\#
-/.emacs.desktop
-/.emacs.desktop.lock
-*.elc
-auto-save-list
-tramp
-.\#*
 
 # ================================
 # Temporary Files
 # ================================
 *.tmp
-*.temp
 *.bak
-*.backup
-*.old
-*.orig
-*.rej
-*~
-
-# ================================
-# Archive Files
-# ================================
-*.tar
-*.tar.gz
-*.tgz
-*.tar.bz2
-*.tbz2
-*.tar.xz
-*.txz
-
-# ================================
-# Chrome Extension Specific
-# ================================
-# Extension archives
-extension.crx
-extension.pem
-extension.zip
-
-# Web Store assets (screenshots, descriptions)
-web-store-assets/
-store-assets/
-screenshots/
-promotional/
-
-# Locales (falls nicht verwendet)
-# _locales/
-
-# ================================
-# Development Tools
-# ================================
-# Webpack
-webpack-stats.json
-
-# Parcel
-.cache/
-.parcel-cache/
-
-# ESLint
-.eslintcache
-
-# Prettier
-.prettierignore
-
-# ================================
-# Environment & Config
-# ================================
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-
-# Config files with secrets
-config.local.js
-secrets.json
-
-# ================================
-# Documentation Build
-# ================================
-docs/_build/
-docs/build/
-
-# ================================
-# Test Coverage
-# ================================
-coverage/
-.nyc_output/
-.coverage
-htmlcov/
-
-# ================================
-# Security
-# ================================
-*.key
-*.pem
-*.crt
-*.p12
-
-# ================================
-# Miscellaneous
-# ================================
-# Runtime data
-pids
-*.pid
-*.seed
-*.pid.lock
-
-# Optional npm cache directory
-.npm
-
-# ESLint cache
-.eslintcache
-
-# Microbundle cache
-.rpt2_cache/
-.rts2_cache_cjs/
-.rts2_cache_es/
-.rts2_cache_umd/
-
-# Optional REPL history
-.node_repl_history
-
-# Output of 'npm pack'
-*.tgz
-
-# Yarn Integrity file
-.yarn-integrity
-
-# Stores VSCode versions used for testing VSCode extensions
-.vscode-test 
+*~ 
