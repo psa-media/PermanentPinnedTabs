@@ -144,6 +144,9 @@ async function checkAndPinTabs(source = 'manual', targetWindowId = null) {
     updateIcon(allTabsOk ? 'green' : 'red');
     console.log('checkAndPinTabs abgeschlossen, Status:', allTabsOk ? 'green' : 'red');
     
+    // Initialisiere URL-Tracking für alle angepinnten Tabs
+    await initializeUrlTracking();
+    
   } catch (error) {
     console.error('Fehler bei checkAndPinTabs:', error);
     updateIcon('red');
@@ -156,6 +159,15 @@ async function handleTabRemoved(tabId, removeInfo) {
   if (isInitializing) return;
   
   console.log('Tab entfernt:', tabId);
+  
+  // Bereinige gespeicherte URL für diesen Tab
+  try {
+    const key = `prevUrl_${tabId}`;
+    await chrome.storage.local.remove([key]);
+  } catch (error) {
+    console.error('Fehler beim Bereinigen der gespeicherten URL:', error);
+  }
+  
   // Verzögerte Überprüfung, da andere Tabs sich noch ändern könnten
   setTimeout(() => checkAndPinTabs('tab-removed'), 1000);
 }
@@ -164,6 +176,11 @@ async function handleTabRemoved(tabId, removeInfo) {
 async function handleTabUpdated(tabId, changeInfo, tab) {
   // Ignoriere während der Initialisierung
   if (isInitializing) return;
+  
+  // Domain-Schutz: Prüfe URL-Änderungen in angepinnten Tabs
+  if (changeInfo.url && tab.pinned) {
+    await handlePinnedTabNavigation(tabId, changeInfo, tab);
+  }
   
   if (changeInfo.pinned !== undefined) {
     console.log('Tab pinning geändert:', tabId, 'pinned:', changeInfo.pinned);
@@ -225,6 +242,12 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     return true; // Async response
   } else if (request.action === 'forceCheck') {
     checkAndPinTabs('force-check').then(() => sendResponse({ success: true }));
+    return true; // Async response
+  } else if (request.action === 'checkTabProtection') {
+    checkTabProtection(request.url, sender.tab).then(sendResponse);
+    return true; // Async response
+  } else if (request.action === 'openInNewTab') {
+    openInNewTab(request.url, sender.tab, request.fromPinnedTab).then(sendResponse);
     return true; // Async response
   }
 });
@@ -320,6 +343,178 @@ function isValidUrl(string) {
     return false;
   }
 }
+
+// Domain-Schutz: Prüfe ob Tab geschützt werden soll
+async function checkTabProtection(url, tab) {
+  try {
+    const result = await chrome.storage.local.get([STORAGE_KEY]);
+    const urls = result[STORAGE_KEY] || [];
+    
+    if (!tab || !tab.pinned) {
+      return { 
+        isProtected: false, 
+        isPinned: false, 
+        originalDomain: null 
+      };
+    }
+    
+    const normalizedCurrentUrl = normalizeUrl(url);
+    
+    // Prüfe ob die aktuelle URL in der Liste der geschützten URLs ist
+    const protectedUrl = urls.find(storedUrl => 
+      normalizeUrl(storedUrl) === normalizedCurrentUrl
+    );
+    
+    if (protectedUrl) {
+      const originalDomain = extractDomain(protectedUrl);
+      console.log(`Tab ${tab.id} ist geschützt für Domain: ${originalDomain}`);
+      
+      return {
+        isProtected: true,
+        isPinned: tab.pinned,
+        originalDomain: originalDomain,
+        originalUrl: protectedUrl
+      };
+    }
+    
+    return { 
+      isProtected: false, 
+      isPinned: tab.pinned, 
+      originalDomain: null 
+    };
+    
+  } catch (error) {
+    console.error('Fehler bei checkTabProtection:', error);
+    return { 
+      isProtected: false, 
+      isPinned: false, 
+      originalDomain: null 
+    };
+  }
+}
+
+// Domain-Schutz: Öffne URL in neuem Tab
+async function openInNewTab(url, sourceTab, fromPinnedTab = false) {
+  try {
+    console.log(`Öffne externe URL in neuem Tab: ${url} (von Tab ${sourceTab?.id})`);
+    
+    // Erstelle neuen Tab in demselben Fenster
+    const newTab = await chrome.tabs.create({
+      url: url,
+      windowId: sourceTab?.windowId,
+      active: true,
+      pinned: false
+    });
+    
+    console.log(`Neuer Tab erstellt: ${newTab.id} für ${url}`);
+    
+    return { success: true, tabId: newTab.id };
+  } catch (error) {
+    console.error('Fehler beim Öffnen in neuem Tab:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+// Domain-Schutz: Navigation in angepinnten Tabs überwachen
+async function handlePinnedTabNavigation(tabId, changeInfo, tab) {
+  try {
+    const result = await chrome.storage.local.get([STORAGE_KEY]);
+    const urls = result[STORAGE_KEY] || [];
+    
+    const currentDomain = extractDomain(changeInfo.url);
+    
+    // Prüfe ob dieser Tab eine geschützte Domain verlässt
+    for (const storedUrl of urls) {
+      const storedDomain = extractDomain(storedUrl);
+      const normalizedStored = normalizeUrl(storedUrl);
+      
+      // Prüfe ob der Tab ursprünglich zu dieser geschützten URL gehörte
+      // Verwende tab.url (vorherige URL) für den Vergleich
+      const previousUrl = await getPreviousTabUrl(tabId) || tab.url;
+      if (previousUrl && normalizeUrl(previousUrl) === normalizedStored) {
+        // Prüfe ob zu einer anderen Domain navigiert wird
+        if (currentDomain !== storedDomain) {
+          console.log(`Domain-Wechsel erkannt in angepinntem Tab ${tabId}: ${storedDomain} -> ${currentDomain}`);
+          console.log(`Öffne ${changeInfo.url} in neuem Tab und stelle ursprüngliche URL wieder her`);
+          
+          // Öffne die neue URL in einem neuen Tab
+          await chrome.tabs.create({
+            url: changeInfo.url,
+            windowId: tab.windowId,
+            active: true,
+            pinned: false
+          });
+          
+          // Stelle die ursprüngliche URL im angepinnten Tab wieder her
+          await chrome.tabs.update(tabId, { url: storedUrl });
+          
+          return;
+        }
+      }
+    }
+    
+    // Speichere die aktuelle URL für zukünftige Vergleiche
+    await savePreviousTabUrl(tabId, changeInfo.url);
+    
+  } catch (error) {
+    console.error('Fehler bei Tab-Navigation-Überwachung:', error);
+  }
+}
+
+// Hilfsfunktion: Extrahiere Domain aus URL (erweiterte Version)
+function extractDomain(url) {
+  try {
+    const urlObj = new URL(url);
+    return urlObj.hostname;
+  } catch (error) {
+    return '';
+  }
+}
+
+// Initialisiere URL-Tracking für alle angepinnten Tabs
+async function initializeUrlTracking() {
+  try {
+    const windows = await chrome.windows.getAll({ populate: true });
+    
+    for (const window of windows) {
+      if (window.type !== 'normal') continue;
+      
+      const pinnedTabs = window.tabs.filter(tab => tab.pinned);
+      
+      for (const tab of pinnedTabs) {
+        await savePreviousTabUrl(tab.id, tab.url);
+      }
+    }
+    
+    console.log('URL-Tracking für angepinnte Tabs initialisiert');
+  } catch (error) {
+    console.error('Fehler bei URL-Tracking Initialisierung:', error);
+  }
+}
+
+// Hilfsfunktion: Speichere vorherige Tab-URL
+async function savePreviousTabUrl(tabId, url) {
+  try {
+    const key = `prevUrl_${tabId}`;
+    await chrome.storage.local.set({ [key]: url });
+  } catch (error) {
+    console.error('Fehler beim Speichern der vorherigen URL:', error);
+  }
+}
+
+// Hilfsfunktion: Lade vorherige Tab-URL
+async function getPreviousTabUrl(tabId) {
+  try {
+    const key = `prevUrl_${tabId}`;
+    const result = await chrome.storage.local.get([key]);
+    return result[key];
+  } catch (error) {
+    console.error('Fehler beim Laden der vorherigen URL:', error);
+    return null;
+  }
+}
+
+
 
 // Initialisierung beim Start der Extension
 chrome.runtime.onInstalled.addListener(async (details) => {
