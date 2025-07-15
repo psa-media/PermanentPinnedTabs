@@ -26,14 +26,56 @@ const ICON_DEFAULT = {
   "128": "icons/icon-128.png"
 };
 
+// State tracking
+let isInitializing = false;
+let lastCheckTime = 0;
+
 // Event Listeners
-chrome.runtime.onStartup.addListener(checkAndPinTabs);
-chrome.windows.onCreated.addListener(checkAndPinTabs);
+chrome.runtime.onStartup.addListener(handleStartup);
+chrome.windows.onCreated.addListener(handleWindowCreated);
 chrome.tabs.onRemoved.addListener(handleTabRemoved);
 chrome.tabs.onUpdated.addListener(handleTabUpdated);
 
+// Handler für Chrome-Start
+async function handleStartup() {
+  console.log('Chrome startup detected');
+  isInitializing = true;
+  
+  // Warte kurz, damit alle Fenster geladen werden
+  setTimeout(async () => {
+    await checkAndPinTabs('startup');
+    isInitializing = false;
+  }, 2000);
+}
+
+// Handler für neues Fenster
+async function handleWindowCreated(window) {
+  console.log('New window created:', window.id);
+  
+  // Ignoriere während der Initialisierung oder wenn es kein normales Fenster ist
+  if (isInitializing || window.type !== 'normal') {
+    return;
+  }
+  
+  // Warte kurz, damit das Fenster vollständig geladen wird
+  setTimeout(() => {
+    checkAndPinTabs('window-created', window.id);
+  }, 1000);
+}
+
 // Hauptfunktion: Überprüfe und pinne Tabs
-async function checkAndPinTabs() {
+async function checkAndPinTabs(source = 'manual', targetWindowId = null) {
+  const now = Date.now();
+  
+  // Verhindere zu häufige Aufrufe (mindestens 1 Sekunde Abstand)
+  if (now - lastCheckTime < 1000) {
+    console.log('Überspringe checkAndPinTabs - zu früh nach letztem Aufruf');
+    return;
+  }
+  
+  lastCheckTime = now;
+  console.log('checkAndPinTabs aufgerufen von:', source);
+  
   try {
     const result = await chrome.storage.local.get([STORAGE_KEY]);
     const urls = result[STORAGE_KEY] || [];
@@ -48,25 +90,35 @@ async function checkAndPinTabs() {
 
     for (const window of windows) {
       if (window.type !== 'normal') continue;
+      
+      // Wenn targetWindowId angegeben ist, nur dieses Fenster bearbeiten
+      if (targetWindowId && window.id !== targetWindowId) continue;
 
       const pinnedTabs = window.tabs.filter(tab => tab.pinned);
       const pinnedUrls = pinnedTabs.map(tab => normalizeUrl(tab.url));
+
+      console.log(`Fenster ${window.id}: ${pinnedTabs.length} angepinnte Tabs gefunden`);
+      console.log('Angepinnte URLs:', pinnedUrls);
+      console.log('Gesuchte URLs:', urls.map(url => normalizeUrl(url)));
 
       // Prüfe, welche URLs fehlen
       const missingUrls = urls.filter(url => !pinnedUrls.includes(normalizeUrl(url)));
       
       if (missingUrls.length > 0) {
+        console.log(`Fehlende URLs in Fenster ${window.id}:`, missingUrls);
         allTabsOk = false;
         
-        // Öffne fehlende Tabs
+        // Öffne fehlende Tabs nur einmal pro Fenster
         for (const url of missingUrls) {
           try {
+            console.log(`Erstelle angepinnten Tab für: ${url}`);
             const tab = await chrome.tabs.create({
               url: url,
               windowId: window.id,
               pinned: true,
               active: false
             });
+            console.log(`Tab erstellt: ${tab.id} für ${url}`);
           } catch (error) {
             console.error(`Fehler beim Öffnen von ${url}:`, error);
           }
@@ -78,6 +130,7 @@ async function checkAndPinTabs() {
         const normalizedTabUrl = normalizeUrl(tab.url);
         if (!urls.some(url => normalizeUrl(url) === normalizedTabUrl)) {
           // Entpinne den Tab, falls er nicht in der Liste steht
+          console.log(`Entpinne Tab: ${tab.url} (nicht in Liste)`);
           try {
             await chrome.tabs.update(tab.id, { pinned: false });
           } catch (error) {
@@ -89,6 +142,7 @@ async function checkAndPinTabs() {
 
     // Aktualisiere Icon basierend auf Status
     updateIcon(allTabsOk ? 'green' : 'red');
+    console.log('checkAndPinTabs abgeschlossen, Status:', allTabsOk ? 'green' : 'red');
     
   } catch (error) {
     console.error('Fehler bei checkAndPinTabs:', error);
@@ -98,15 +152,23 @@ async function checkAndPinTabs() {
 
 // Tab entfernt Handler
 async function handleTabRemoved(tabId, removeInfo) {
+  // Ignoriere während der Initialisierung
+  if (isInitializing) return;
+  
+  console.log('Tab entfernt:', tabId);
   // Verzögerte Überprüfung, da andere Tabs sich noch ändern könnten
-  setTimeout(checkAndPinTabs, 1000);
+  setTimeout(() => checkAndPinTabs('tab-removed'), 1000);
 }
 
 // Tab aktualisiert Handler
 async function handleTabUpdated(tabId, changeInfo, tab) {
+  // Ignoriere während der Initialisierung
+  if (isInitializing) return;
+  
   if (changeInfo.pinned !== undefined) {
+    console.log('Tab pinning geändert:', tabId, 'pinned:', changeInfo.pinned);
     // Verzögerte Überprüfung bei Pinning-Änderungen
-    setTimeout(checkAndPinTabs, 500);
+    setTimeout(() => checkAndPinTabs('tab-updated'), 500);
   }
 }
 
@@ -162,7 +224,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     getPermanentUrls().then(sendResponse);
     return true; // Async response
   } else if (request.action === 'forceCheck') {
-    checkAndPinTabs().then(() => sendResponse({ success: true }));
+    checkAndPinTabs('force-check').then(() => sendResponse({ success: true }));
     return true; // Async response
   }
 });
@@ -188,7 +250,7 @@ async function addPermanentUrl(url) {
     await chrome.storage.local.set({ [STORAGE_KEY]: urls });
     
     // Sofortige Überprüfung nach Hinzufügung
-    setTimeout(checkAndPinTabs, 100);
+    setTimeout(() => checkAndPinTabs('url-added'), 100);
     
     return { success: true };
   } catch (error) {
@@ -229,7 +291,7 @@ async function removePermanentUrl(url) {
     }
     
     // Überprüfung nach Entfernung
-    setTimeout(checkAndPinTabs, 100);
+    setTimeout(() => checkAndPinTabs('url-removed'), 100);
     
     return { success: true };
   } catch (error) {
@@ -260,13 +322,17 @@ function isValidUrl(string) {
 }
 
 // Initialisierung beim Start der Extension
-chrome.runtime.onInstalled.addListener(() => {
+chrome.runtime.onInstalled.addListener(async (details) => {
+  console.log('Extension installed/updated:', details.reason);
   // Setze Standard-Icon
   updateIcon('default');
   
-  // Erste Überprüfung nach Installation
-  setTimeout(checkAndPinTabs, 2000);
-});
-
-// Verzögerte Überprüfung beim Start
-setTimeout(checkAndPinTabs, 3000); 
+  // Nur bei Installation oder Update eine Überprüfung durchführen
+  if (details.reason === 'install' || details.reason === 'update') {
+    isInitializing = true;
+    setTimeout(async () => {
+      await checkAndPinTabs('extension-installed');
+      isInitializing = false;
+    }, 2000);
+  }
+}); 
