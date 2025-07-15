@@ -16,6 +16,7 @@ PermanentPinnedTabs automatisiert das Verwalten von angepinnten Tabs in Chrome. 
 - ✅ Zeigt den aktuellen Status über das Browser-Icon an
 - ✅ Bietet eine benutzerfreundliche Oberfläche zur Verwaltung
 - ✅ **Domain-Schutz**: Verhindert Navigation zu externen Domains in angepinnten Tabs
+- ✅ **Bidirektionale Synchronisation**: Manuelle Pin/Unpin-Aktionen werden automatisch synchronisiert
 
 ## 🚀 Hauptfunktionen
 
@@ -36,6 +37,12 @@ PermanentPinnedTabs automatisiert das Verwalten von angepinnten Tabs in Chrome. 
 - **Form-Submissions**: Formulare zu externen Domains werden in neuen Tabs verarbeitet
 - **History-API**: Verhindert programmatische Navigation zu externen Domains
 - **Automatische Wiederherstellung**: Angepinnte Tabs kehren automatisch zur ursprünglichen Domain zurück
+
+### Bidirektionale Synchronisation (NEU!)
+- **Manuelles Anpinnen**: Wenn Sie einen Tab manuell anpinnen, wird er automatisch zur permanenten Liste hinzugefügt
+- **Manuelles Entpinnen**: Wenn Sie einen Tab manuell entpinnen, wird er automatisch aus der permanenten Liste entfernt
+- **Intelligente Erkennung**: Die Extension unterscheidet zwischen automatischen und manuellen Aktionen
+- **Nahtlose Integration**: Funktioniert transparent mit der normalen Chrome Tab-Verwaltung
 
 ### Sicherheit & Speicherung
 - **Lokale Speicherung**: Alle Daten bleiben auf Ihrem Gerät
@@ -139,11 +146,17 @@ Die Erweiterung arbeitet automatisch im Hintergrund:
 - ✅ Formular zu externer Domain → Öffnet Ergebnis in neuem Tab
 - ✅ Angepinnter Tab bleibt auf ursprünglicher Domain
 
-**Beispiel:**
+**Domain-Schutz Beispiel:**
 1. Sie haben `https://github.com` als angepinnten Tab
 2. Sie klicken auf einen Link zu `https://stackoverflow.com`
 3. StackOverflow öffnet sich in einem **neuen Tab**
 4. Der angepinnte Tab bleibt auf GitHub
+
+**Bidirektionale Synchronisation Beispiel:**
+1. Sie öffnen `https://google.com` in einem normalen Tab
+2. Sie **pinnen den Tab manuell** mit Rechtsklick → "Tab anheften"
+3. Die Extension **erkennt das automatisch** und fügt Google zur permanenten Liste hinzu
+4. Beim nächsten Chrome-Start wird Google automatisch als angepinnter Tab geöffnet
 
 ## ⚙️ Konfiguration
 
