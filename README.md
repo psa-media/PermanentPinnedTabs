@@ -17,6 +17,7 @@ PermanentPinnedTabs automatisiert das Verwalten von angepinnten Tabs in Chrome. 
 - ✅ Bietet eine benutzerfreundliche Oberfläche zur Verwaltung
 - ✅ **Domain-Schutz**: Verhindert Navigation zu externen Domains in angepinnten Tabs
 - ✅ **Bidirektionale Synchronisation**: Manuelle Pin/Unpin-Aktionen werden automatisch synchronisiert
+- ✅ **Automatische Installation-Synchronisation**: Bestehende angepinnte Tabs werden bei der ersten Installation automatisch übernommen
 
 ## 🚀 Hauptfunktionen
 
@@ -30,6 +31,13 @@ PermanentPinnedTabs automatisiert das Verwalten von angepinnten Tabs in Chrome. 
 - **URL-Verwaltung**: Einfaches Hinzufügen und Entfernen von URLs
 - **Aktueller Tab**: Ein-Klick-Option zum Hinzufügen des aktiven Tabs
 - **Status-Anzeige**: Visueller Indikator für den aktuellen Status
+
+### Automatische Installation-Synchronisation (NEU!)
+- **Nahtlose Übernahme**: Bei der ersten Installation werden alle bereits angepinnten Tabs automatisch in die permanente Liste übernommen
+- **Intelligente Erkennung**: Durchsucht alle Browser-Fenster nach bestehenden angepinnten Tabs
+- **Validierung**: Nur gültige HTTP/HTTPS URLs werden übernommen
+- **Duplikat-Schutz**: Bereits vorhandene URLs werden nicht doppelt hinzugefügt
+- **Transparenter Prozess**: Alle Aktionen werden protokolliert für bessere Nachvollziehbarkeit
 
 ### Domain-Schutz (NEU!)
 - **Externe Links**: Klicks auf Links zu anderen Domains öffnen automatisch neue Tabs
@@ -151,6 +159,13 @@ Die Erweiterung arbeitet automatisch im Hintergrund:
 2. Sie klicken auf einen Link zu `https://stackoverflow.com`
 3. StackOverflow öffnet sich in einem **neuen Tab**
 4. Der angepinnte Tab bleibt auf GitHub
+
+**Installation-Synchronisation Beispiel:**
+1. Sie haben bereits `https://github.com` und `https://google.com` als angepinnte Tabs
+2. Sie installieren die PermanentPinnedTabs Extension
+3. Die Extension **erkennt automatisch** alle bestehenden angepinnten Tabs
+4. GitHub und Google werden **automatisch zur permanenten Liste hinzugefügt**
+5. Beim nächsten Chrome-Start bleiben diese Tabs dauerhaft angepinnt
 
 **Bidirektionale Synchronisation Beispiel:**
 1. Sie öffnen `https://google.com` in einem normalen Tab

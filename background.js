@@ -592,12 +592,71 @@ chrome.runtime.onInstalled.addListener(async (details) => {
   // Setze Standard-Icon
   updateIcon('default');
   
-  // Nur bei Installation oder Update eine Überprüfung durchführen
-  if (details.reason === 'install' || details.reason === 'update') {
+  // Bei Installation: Synchronisiere bestehende angepinnte Tabs
+  if (details.reason === 'install') {
+    console.log('Erste Installation erkannt - synchronisiere bestehende angepinnte Tabs');
     isInitializing = true;
     setTimeout(async () => {
+      await syncExistingPinnedTabs();
       await checkAndPinTabs('extension-installed');
       isInitializing = false;
     }, 2000);
+  } else if (details.reason === 'update') {
+    // Bei Update nur eine normale Überprüfung durchführen
+    isInitializing = true;
+    setTimeout(async () => {
+      await checkAndPinTabs('extension-updated');
+      isInitializing = false;
+    }, 2000);
   }
-}); 
+});
+
+// Synchronisiere bestehende angepinnte Tabs zur permanenten Liste
+async function syncExistingPinnedTabs() {
+  try {
+    console.log('Synchronisiere bestehende angepinnte Tabs...');
+    
+    // Hole aktuelle gespeicherte URLs
+    const result = await chrome.storage.local.get([STORAGE_KEY]);
+    const existingUrls = result[STORAGE_KEY] || [];
+    
+    // Hole alle Fenster mit Tabs
+    const windows = await chrome.windows.getAll({ populate: true });
+    const newUrls = [...existingUrls];
+    
+    for (const window of windows) {
+      if (window.type !== 'normal') continue;
+      
+      // Finde alle angepinnten Tabs in diesem Fenster
+      const pinnedTabs = window.tabs.filter(tab => tab.pinned);
+      
+      for (const tab of pinnedTabs) {
+        if (!tab.url || !isValidUrl(tab.url)) {
+          console.log('Überspringe ungültige URL:', tab.url);
+          continue;
+        }
+        
+        const normalizedTabUrl = normalizeUrl(tab.url);
+        
+        // Prüfe ob diese URL bereits in der Liste ist
+        const alreadyExists = newUrls.some(url => normalizeUrl(url) === normalizedTabUrl);
+        
+        if (!alreadyExists) {
+          console.log('Füge bestehenden angepinnten Tab zur Liste hinzu:', tab.url);
+          newUrls.push(tab.url);
+        }
+      }
+    }
+    
+    // Speichere die erweiterte Liste
+    if (newUrls.length > existingUrls.length) {
+      await chrome.storage.local.set({ [STORAGE_KEY]: newUrls });
+      console.log(`${newUrls.length - existingUrls.length} bestehende angepinnte Tabs zur permanenten Liste hinzugefügt`);
+    } else {
+      console.log('Keine neuen angepinnte Tabs zum Hinzufügen gefunden');
+    }
+    
+  } catch (error) {
+    console.error('Fehler beim Synchronisieren bestehender angepinnter Tabs:', error);
+  }
+} 
